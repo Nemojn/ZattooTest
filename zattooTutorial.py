@@ -22,6 +22,7 @@ print('Starting session...')
 #starts session
 try:
 	helloResponse = sess.post('https://sandbox.zattoo.com/zapi/session/hello'+helloQuery)
+#error handling for no internet connection
 except (socket.gaierror, urllib3.exceptions.NewConnectionError, urllib3.exceptions.MaxRetryError, requests.exceptions.ConnectionError):
 	print("Unable to connect to server. Check your internet connection")
 else:
@@ -34,6 +35,7 @@ else:
 	#preparing watch query
 	watchQuery = "?cid=3sat&stream_type=hls"
 	
+	print('Successfully connected to server.')
 	print('Requesting stream url...')
 	
 	#requests stream url
