@@ -4,17 +4,22 @@ import uuid
 import json
 import socket
 import urllib3
-#importing secret app tid
+
+#importing secret app id
 from SecretParams import *
 
 #status boolean initialization
 internetConnection = False
-
-#Non-applicable if there's no internet connection 
 helloSuccessful = False
 watchSuccessful = False
 disabledChannel = False
 endedSession = False
+
+#http error indicators
+helloError = "No internet"
+watchError = "No internet"
+disableError = "No internet"
+endError = "No internet"
 
 
 #creates uuid
@@ -54,8 +59,10 @@ else:
 		except KeyError:
 			helloError = "none"
 	else:
-		helloSuccess = True
+		helloSuccessful = True
+		helloError = "none"
 		print('Successfully connected to server.')
+	
 		#preparing watch query
 		watchQuery = "?cid=3sat&stream_type=hls"
 		print('Requesting stream url...')
@@ -75,27 +82,28 @@ else:
 			#formats json object into more convenient form
 			print(json.dumps(watchResponse, indent=4, sort_keys=True))
 			
-			if watchResponse['success'] is 'true':
-				#finds and prints stream url
-				watchSuccess = True
-				print('Stream url: '+watchResponse['stream']['url'])
-			else:
+			if watchResponse['success'] is 'false':
 				try:
 					watchError = str(watchResponse['http_status'])
 					print("Unable to fetch watch URL. HTTP Error: " + watchError)
 				except KeyError:
 					watchError = "none"
+			else:
+                                #finds and prints stream url
+                                watchSuccess = True
+                                print('Stream url: '+watchResponse['stream']['url'])
+				
+				#stopping test channel
+				print('Stopping test channel...')
+				try:
+                	        	stopResponse = sess.get('https://sandbox.zattoo.com/zapi/stop')
+	
+	                        	stopResponse = json.loads(stopResponse.text)
+	
+	                        print(json.dumps(watchResponse, indent=4, sort_keys=True))
+	
+	                        print('Test channel stopped.')
 		finally:
-			#stopping test channel
-			print('Stopping test channel...')
-			stopResponse = sess.get('https://sandbox.zattoo.com/zapi/stop')
-			
-			stopResponse = json.loads(stopResponse.text)
-			
-			print(json.dumps(watchResponse, indent=4, sort_keys=True))
-			
-			print('Test channel stopped.')
-
 			#stopping session
 			print('Stopping session...')
 			stopSessionResponse = sess.post('https://sandbox.zattoo.com/zapi/session/goodbye')
