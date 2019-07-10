@@ -16,10 +16,11 @@ disabledChannel = False
 endedSession = False
 
 #http error indicators
-helloError = "No internet"
-watchError = "No internet"
-disableError = "No internet"
-endError = "No internet"
+helloError = "null"
+watchError = "null"
+streamURL = "null"
+disableError = "null"
+endError = "null"
 
 
 #creates uuid
@@ -50,10 +51,10 @@ except ValueError:
 	print("Error: Response not in JSON format.")
 else:
 	internetConnection = True
-
+	
 	#makes the json object nice and easy to read
 	print(json.dumps(helloResponse, indent=4, sort_keys=True))
-	if helloResponse['success'] is 'false':
+	if helloResponse['success'] is False:
 		try:
 			helloError = str(helloResponse['http_status'])
 		except KeyError:
@@ -62,7 +63,7 @@ else:
 		helloSuccessful = True
 		helloError = "none"
 		print('Successfully connected to server.')
-	
+		
 		#preparing watch query
 		watchQuery = "?cid=3sat&stream_type=hls"
 		print('Requesting stream url...')
@@ -82,36 +83,71 @@ else:
 			#formats json object into more convenient form
 			print(json.dumps(watchResponse, indent=4, sort_keys=True))
 			
-			if watchResponse['success'] is 'false':
+			if watchResponse['success'] is False:
 				try:
 					watchError = str(watchResponse['http_status'])
 					print("Unable to fetch watch URL. HTTP Error: " + watchError)
 				except KeyError:
 					watchError = "none"
 			else:
-                                #finds and prints stream url
-                                watchSuccess = True
-                                print('Stream url: '+watchResponse['stream']['url'])
+				watchSuccessful = True
+				watchError = "none"
+				
+				#finds and prints stream url
+				streamURL = watchResponse['stream']['url']
+				print('Stream URL: ' + streamURL)
 				
 				#stopping test channel
 				print('Stopping test channel...')
 				try:
-                	        	stopResponse = sess.get('https://sandbox.zattoo.com/zapi/stop')
-	
-	                        	stopResponse = json.loads(stopResponse.text)
-	
-	                        print(json.dumps(watchResponse, indent=4, sort_keys=True))
-	
-	                        print('Test channel stopped.')
+					stopResponse = sess.get('https://sandbox.zattoo.com/zapi/stop')
+					stopResponse = json.loads(stopResponse.text)
+				except (socket.gaierror, urllib3.exceptions.NewConnectionError, urllib3.exceptions.MaxRetryError, requests.exceptions.ConnectionError):
+					internetnetConnection = False
+					print("Unable to connect to server. Check your internet connection")
+				except ValueError:
+					internetConnection = True
+					print("Error: Response not in JSON format.")
+				else:
+					if stopResponse['success'] is False:
+						try:
+							disableError = str(stopResponse['http_status'])
+							print("An error occured while attempting to stop the test channel. HTTP Error: " + stopError)
+						except KeyError:
+							stopError = "none"
+					else:
+						disabledChannel = True
+						disableError = "none"
+			
+						print(json.dumps(watchResponse, indent=4, sort_keys=True))
+						print('Test channel stopped.')
 		finally:
 			#stopping session
 			print('Stopping session...')
-			stopSessionResponse = sess.post('https://sandbox.zattoo.com/zapi/session/goodbye')
-			
-			stopSessionResponse = json.loads(stopSessionResponse.text)
-			print(json.dumps(stopSessionResponse, indent=4, sort_keys=True))
-			print('Session stopped.')
+			try:
+				stopSessionResponse = sess.post('https://sandbox.zattoo.com/zapi/session/butts')
+				stopSessionResponse = json.loads(stopSessionResponse.text)
+			except (socket.gaierror, urllib3.exceptions.NewConnectionError, urllib3.exceptions.MaxRetryError, requests.exceptions.ConnectionError):
+				internetnetConnection = False
+				print("Unable to connect to server. Check your internet connection")
+			except ValueError:
+				internetConnection = True
+				print("Error: Response not in JSON format.")
+			else:
+				if stopSessionResponse['success'] is False:
+					try:
+						endError = str(stopSessionResponse['http_status'])
+						print("An error occured while attempting to end the session. HTTP Error: " + endError)
+					except KeyError:
+						endError = "none"
+				else:
+					endedSession = True
+					endError = "none"
+					print(json.dumps(stopSessionResponse, indent=4, sort_keys=True))
+					print('Session stopped.')
 finally:
 	#Status report printing
 	print("\nStatus:\n\nConnected to internet: " + str(internetConnection) + "\nHello call successful: " + str(helloSuccessful) + 
-	"\nWatch call successful: " + str(watchSuccessful) + "\nChannel disabled: " + str(disabledChannel) + "\nSession stopped: " + str(endedSession))
+	"\nWatch call successful: " + str(watchSuccessful) + "\nChannel disabled: " + str(disabledChannel) + "\nSession stopped: " + str(endedSession) + "\nStream URL: " + streamURL)
+	
+	print("\nHTTP Errors:\n\nHello call error: " + helloError + "\nWatch call error: " + watchError + "\nDisable channel error: " + disableError + "\nEnd session error: " + endError)
