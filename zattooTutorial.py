@@ -125,7 +125,7 @@ else:
 			#stopping session
 			print('Stopping session...')
 			try:
-				stopSessionResponse = sess.post('https://sandbox.zattoo.com/zapi/session/butts')
+				stopSessionResponse = sess.post('https://sandbox.zattoo.com/zapi/session/goodbye')
 				stopSessionResponse = json.loads(stopSessionResponse.text)
 			except (socket.gaierror, urllib3.exceptions.NewConnectionError, urllib3.exceptions.MaxRetryError, requests.exceptions.ConnectionError):
 				internetnetConnection = False
